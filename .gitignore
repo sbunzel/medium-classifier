@@ -1,3 +1,12 @@
+# PERSONAL
+# Static pdfs of research papers etc
+resources/
+data/processed/
+models/
+output/
+*/articles.csv
+
+# GENERIC PYTHON STUFF
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
