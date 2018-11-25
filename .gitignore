@@ -6,6 +6,7 @@ models/
 output/
 */articles.csv
 data/shared/fastai/*
+reports/images/
 
 # GENERIC PYTHON STUFF
 # Byte-compiled / optimized / DLL files
