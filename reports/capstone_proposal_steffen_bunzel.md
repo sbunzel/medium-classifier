@@ -36,7 +36,7 @@ The proposed solution, which I plan to evaluate in this project, involves buildi
 
 A simple benchmark model for this task would be one that only uses the numerical metadata on each article, i.e. claps and reading time.
 
-<center><img src="./output/base_classifier.png" alt="Classes by claps and reading time" width="400"/></center>
+<center><img src="./images/base_classifier.png" alt="Classes by claps and reading time" width="400"/></center>
 <center>*Figure 1: Classes by claps and reading time*</center>
 <br>
 
