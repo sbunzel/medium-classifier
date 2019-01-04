@@ -5,12 +5,20 @@ from collections import namedtuple
 from typing import List
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn import metrics
-from keras.engine.training import Model as keras_model
 from pathlib import Path
 import copy
 import re
 import operator
 
+
+def save_pickle(df: pd.DataFrame, out:Path) -> None:
+    m = df.loc[0, "method"]
+    p = Path(out / "raw" / re.sub(" ", "_", m[:-3]))
+    if not p.is_dir(): p.mkdir(parents=True)
+    f = p / f"{re.sub(' ', '_', m)}.pkl"
+    df.to_pickle(f)
+    print(f"Saved results to file at: {str(f)}")
+    
 
 def save_html(df:pd.DataFrame, name:str, out:Path, **kwargs) -> None:
     html = (df
@@ -21,6 +29,15 @@ def save_html(df:pd.DataFrame, name:str, out:Path, **kwargs) -> None:
             .replace('<th>', '<th><center>'))
     with open(out / f"{name}.html", "w") as f:
         f.write(html)
+        
+        
+def read_results(folder: Path, pattern: str) -> List:
+    results = []
+    for f in folder.rglob(pattern):
+        df = pd.read_pickle(f)
+        df["base_method"] = f.parent.name
+        results.append(df)
+    return results
         
         
 class CustomEvaluator:
@@ -51,7 +68,7 @@ ScoredClf = namedtuple("ScoredClf", [
     "oob_auc"
 ])
 
-def fit_ensemble(m, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progress:bool=False, **kwargs) -> namedtuple:
+def fit_ensemble(m, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progress:bool=False, **kwargs) -> List:
     """Fit a model on different subsets of the training set and collect the results
 
     Arguments:
@@ -64,7 +81,8 @@ def fit_ensemble(m, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progre
     Returns:
     fitted_clfs - a list of named tuples collecting the scored classifiers as well as their training and out of bag AUCs
     """
-
+    
+    from keras.engine.training import Model as keras_model
 
     fitted_clfs = []
 
@@ -134,7 +152,7 @@ def evaluate_ensemble(fitted:List, eval:CustomEvaluator, X_test:ndarray,
         test_auc = eval.score(y_test, preds_test.mean(axis=0), return_res)
         return pd.DataFrame({"method": method,
                              "mean train auc" : np.mean(train_scores),
-                                 "mean cv auc" : np.mean(oob_scores),
+                             "mean cv auc" : np.mean(oob_scores),
                              "mean test auc" : test_auc}, index=[0])
     else:
         eval.score(y_test, preds_test.mean(axis=0))
@@ -172,8 +190,8 @@ def check_coverage(vocab, embeddings_index):
             i += vocab[word]
             pass
 
-    print("Found embeddings for {:.2%} of vocab".format(len(a) / len(vocab)))
-    print("Found embeddings for  {:.2%} of all text".format(k / (k + i)))
+    print("Found matches for {:.2%} of vocab".format(len(a) / len(vocab)))
+    print("Found matches for  {:.2%} of all text".format(k / (k + i)))
     sorted_x = sorted(oov.items(), key=operator.itemgetter(1))[::-1]
 
     return sorted_x
