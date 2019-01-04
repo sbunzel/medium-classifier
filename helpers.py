@@ -68,11 +68,12 @@ ScoredClf = namedtuple("ScoredClf", [
     "oob_auc"
 ])
 
-def fit_ensemble(m, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progress:bool=False, **kwargs) -> List:
+
+def fit_ensemble(model, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progress:bool=False, **kwargs) -> List:
     """Fit a model on different subsets of the training set and collect the results
 
     Arguments:
-    m - a model object implementing `fit` and `predict_proba`
+    m - a model object implementing `fit` and `predict_proba` or a tuple specifying a keras model architecture
     s - an object of class sklearn.model_selection.StratifiedShuffleSplit, i.e. an iterator of random, stratified splits
     X - numpy array of training texts
     y - numpy array of training labels
@@ -83,6 +84,7 @@ def fit_ensemble(m, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progre
     """
     
     from keras.engine.training import Model as keras_model
+    from keras.models import Model
 
     fitted_clfs = []
 
@@ -95,6 +97,12 @@ def fit_ensemble(m, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progre
             print("Training model number  ", i+1)
             print("#######################################")
             print("")
+            
+        if isinstance(model, tuple):
+            m = Model(inputs=model[0], outputs=model[1])
+            m.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
+        else:
+            m = model
 
         m.fit(X[i_train], y[i_train], **kwargs)
         fitted_clf = copy.deepcopy(m)
@@ -133,6 +141,8 @@ def evaluate_ensemble(fitted:List, eval:CustomEvaluator, X_test:ndarray,
     pd.DataFrame - if requested, return pandas dataframe summarizing the results
     """
     
+    from keras.engine.training import Model as keras_model
+    
     if hasattr(fitted[0], "clf"):
         train_scores = [m.train_auc for m in fitted]
         oob_scores = [m.oob_auc for m in fitted]
@@ -157,8 +167,7 @@ def evaluate_ensemble(fitted:List, eval:CustomEvaluator, X_test:ndarray,
     else:
         eval.score(y_test, preds_test.mean(axis=0))
     
-    
-    
+
     
 def build_vocab(sentences):
     """
