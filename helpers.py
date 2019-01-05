@@ -38,7 +38,27 @@ def read_results(folder: Path, pattern: str) -> List:
         df["base_method"] = f.parent.name
         results.append(df)
     return results
+
+
+def explode_texts(df: pd.DataFrame, fixed_cols: tuple=("id", "label"), split: str="\n") -> pd.DataFrame:
+    return (df
+             .reset_index()
+             .rename({"index" : fixed_cols[0]}, axis=1)
+             .set_index(list(fixed_cols))
+             .stack()
+             .str.split(split, expand=True)
+             .stack()
+             .unstack(-2)
+             .reset_index(-1, drop=True)
+             .reset_index())
+
         
+def evaluate_exploded(df_expl: pd.DataFrame, preds: np.ndarray, y_true: np.ndarray) -> None:
+    df = df_expl.copy()
+    df["pred"] = preds
+    auc = metrics.roc_auc_score(y_true, df.groupby("id").agg({"pred" : "mean"}))
+    print(f"AUC: {auc:.2f}")
+
         
 class CustomEvaluator:
     
