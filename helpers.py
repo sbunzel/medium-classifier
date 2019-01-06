@@ -5,6 +5,9 @@ from collections import namedtuple
 from typing import List
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn import metrics
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import f_classif
 from pathlib import Path
 import copy
 import re
@@ -58,6 +61,44 @@ def evaluate_exploded(df_expl: pd.DataFrame, preds: np.ndarray, y_true: np.ndarr
     df["pred"] = preds
     auc = metrics.roc_auc_score(y_true, df.groupby("id").agg({"pred" : "mean"}))
     print(f"AUC: {auc:.2f}")
+    
+    
+def ngram_vectorize(train_texts, train_labels, val_texts,
+                    ngram_range=(1,2), top_k=20000, token_mode='word', min_document_frequency=2):
+    """Vectorizes texts as n-gram vectors.
+
+    1 text = 1 tf-idf vector the length of vocabulary of unigrams + bigrams.
+
+    # Arguments
+        train_texts: list, training text strings.
+        train_labels: np.ndarray, training labels.
+        val_texts: list, validation text strings.
+
+    # Returns
+        x_train, x_val: vectorized training and validation texts
+    """
+    # Create keyword arguments to pass to the 'tf-idf' vectorizer.
+    kwargs = {
+            'ngram_range': ngram_range,  # Use 1-grams + 2-grams.
+            'strip_accents': 'unicode',
+            'decode_error': 'replace',
+            'analyzer': token_mode,  # Split text into word tokens.
+            'min_df': min_document_frequency,
+    }
+    vectorizer = TfidfVectorizer(**kwargs)
+
+    # Learn vocabulary from training texts and vectorize training texts.
+    x_train = vectorizer.fit_transform(train_texts)
+
+    # Vectorize validation texts.
+    x_val = vectorizer.transform(val_texts)
+
+    # Select top 'k' of the vectorized features.
+    selector = SelectKBest(f_classif, k=min(top_k, x_train.shape[1]))
+    selector.fit(x_train, train_labels)
+    x_train = selector.transform(x_train).astype('float32')
+    x_val = selector.transform(x_val).astype('float32')
+    return x_train, x_val
 
         
 class CustomEvaluator:
@@ -89,11 +130,11 @@ ScoredClf = namedtuple("ScoredClf", [
 ])
 
 
-def fit_ensemble(model, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progress:bool=False, **kwargs) -> List:
+def fit_ensemble(m, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_progress:bool=False, **kwargs) -> List:
     """Fit a model on different subsets of the training set and collect the results
 
     Arguments:
-    m - a model object implementing `fit` and `predict_proba` or a tuple specifying a keras model architecture
+    m - a sklearn model object implementing `fit` and `predict_proba`
     s - an object of class sklearn.model_selection.StratifiedShuffleSplit, i.e. an iterator of random, stratified splits
     X - numpy array of training texts
     y - numpy array of training labels
@@ -103,9 +144,6 @@ def fit_ensemble(model, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_pr
     fitted_clfs - a list of named tuples collecting the scored classifiers as well as their training and out of bag AUCs
     """
     
-    from keras.engine.training import Model as keras_model
-    from keras.models import Model
-
     fitted_clfs = []
 
     for i, split in enumerate(s.split(X, y)):
@@ -117,12 +155,6 @@ def fit_ensemble(model, s:StratifiedShuffleSplit, X:ndarray, y:ndarray, print_pr
             print("Training model number  ", i+1)
             print("#######################################")
             print("")
-            
-        if isinstance(model, tuple):
-            m = Model(inputs=model[0], outputs=model[1])
-            m.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
-        else:
-            m = model
 
         m.fit(X[i_train], y[i_train], **kwargs)
         fitted_clf = copy.deepcopy(m)

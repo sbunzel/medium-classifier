@@ -190,7 +190,7 @@ As the focus of this work is on using just a post's text as an input for a class
 ### Benchmark
 As the data set used in this project is specific to the interest of the author, naturally no publicly available benchmarks exist. However, there is one obvious point of comparison: The performance of a model trained just on the numerical features available.
 
-Thus, three classes of classification models were trained and tuned on the numerical columns `claps` and `reading time` without any preprocessing. The models were evaluated using 6-fold cross-validation and a shared test set containing 30 percent of the full data set used for comparison with the other model classes as well as the text based models introduced above. For evaluation on the cross-validation folds, the Receiver Operating Curve Area Under the Curve (roc auc) was used as it allows to estimate performance independent from the threshold chosen for classifying observations as positive. For final evaluation on the hold out test set, the predictions from each of the models trained during cross-validation were averaged and assessed based on precision and recall. Table 3 summarizes the results of this evaluation.
+Thus, three classes of classification models were trained and tuned on the numerical columns `claps` and `reading time` without any preprocessing. The models were evaluated using 6-fold cross-validation and a shared test set containing 30 percent of the full data set used for comparison with the other model classes as well as the text based models introduced above. For evaluation on the cross-validation folds, the Receiver Operating Characteristic Area Under the Curve (roc auc) was used as it allows to estimate performance independent from the threshold chosen for classifying observations as positive. For final evaluation on the hold out test set, the predictions from each of the models trained during cross-validation were averaged and assessed based on precision and recall. Table 3 summarizes the results of this evaluation.
 
 <center>
 <table border="2" class="dataframe">
@@ -229,6 +229,8 @@ Thus, three classes of classification models were trained and tuned on the numer
 <br>
 <br>
 </center>
+
+#TODO: REPORT BEST BASELINE PRECISION AND RECALL
 
 ## III. Methodology
 
@@ -378,7 +380,85 @@ The following parameters were optimized:
   - `gamma`: Kernel coefficient for the `rbf` kernel. Determines how much influence a single observation has. Higher values are more likely to lead to overfitting
   - `class_weight`: Whether or not to adjust the parameter `C` inversely proportional to class frequencies
 
-Table 5 summarizes the resulting performance metrics averaged over the same random seeds as before. These results show slight improvements over all metrics.
+Compare chapter `IV. Results - Model Evaluation and Validation` for the results of this optimization.
+
+#### Class 2: Word Embeddings + Neural Network
+
+<center>
+<table border="2" class="dataframe">
+  <thead>
+    <tr align="center">
+      <th><center></th>
+      <th colspan="2" halign="left">train auc</th>
+      <th colspan="2" halign="left">test auc</th>
+    </tr>
+    <tr align="center">
+      <th><center></th>
+      <th><center>mean</th>
+      <th><center>std</th>
+      <th><center>mean</th>
+      <th><center>std</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr align="center">
+      <th><center>embeddings_keras</th>
+      <td>0.943432</td>
+      <td>0.039151</td>
+      <td>0.650857</td>
+      <td>0.113234</td>
+    </tr>
+  </tbody>
+</table>
+</center>
+<center>
+*Table 5: TBD*
+<br>
+<br>
+</center>
+
+#### Class 3: Pretrained Language Model + Neural Network
+
+<center>
+<table border="2" class="dataframe">
+  <thead>
+    <tr align="center">
+      <th><center></th>
+      <th colspan="2" halign="left">train auc</th>
+      <th colspan="2" halign="left">test auc</th>
+    </tr>
+    <tr align="center">
+      <th><center></th>
+      <th><center>mean</th>
+      <th><center>std</th>
+      <th><center>mean</th>
+      <th><center>std</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr align="center">
+      <th><center>lm_fine_tuning</th>
+      <td>0.909781</td>
+      <td>0.045641</td>
+      <td>0.66</td>
+      <td>0.098602</td>
+    </tr>
+  </tbody>
+</table>
+</center>
+<center>
+*Table 6: TBD*
+<br>
+<br>
+</center>
+
+## IV. Results
+
+### Model Evaluation and Validation
+
+The best models found during the extensive hyperparameter search and evaluation described in chapter `III. Methodology - Refinement`, used n-gram tokenization in combination with machine learning models which do not consider sequential information (in particular, random forests and support vector machines). The model refinement phase included a sensitivity analysis in changing the random seed used for sampling the training and test set as well as the model parameters which entail randomness.
+
+Table 7 summarizes the resulting performance metrics for the modeling approaches most successful with default parameters. All metrics are averaged over the same random seeds used for the default models. These results show slight improvements in all metrics.
 
 <center>
 <table border="2" class="dataframe">
@@ -422,94 +502,58 @@ Table 5 summarizes the resulting performance metrics averaged over the same rand
 </table>
 </center>
 <center>
-*Table 5: Results from top class 1 approaches after parameter tuning*
+*Table 7: Results from top class 1 approaches after parameter tuning*
 <br>
 <br>
 </center>
 
-For the parameter settings found by the grid searches please refer to `Appendix II`.
+For the parameter settings found by the grid searches please refer to `Appendix IV`.
 
-<center>
-<table border="2" class="dataframe">
-  <thead>
-    <tr align="center">
-      <th><center></th>
-      <th colspan="2" halign="left">train auc</th>
-      <th colspan="2" halign="left">test auc</th>
-    </tr>
-    <tr align="center">
-      <th><center></th>
-      <th><center>mean</th>
-      <th><center>std</th>
-      <th><center>mean</th>
-      <th><center>std</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr align="center">
-      <th><center>embeddings_keras</th>
-      <td>0.943432</td>
-      <td>0.039151</td>
-      <td>0.650857</td>
-      <td>0.113234</td>
-    </tr>
-  </tbody>
-</table>
-</center>
-<center>
-*Table 6: TBD*
-<br>
-<br>
-</center>
-
-
-## IV. Results
-
-### Model Evaluation and Validation
-
-
-
-In this section, the final model and any supporting qualities should be evaluated in detail. It should be clear how the final model was derived and why this model was chosen. In addition, some type of analysis should be used to validate the robustness of this model and its solution, such as manipulating the input data or environment to see how the model’s solution is affected (this is called sensitivity analysis). Questions to ask yourself when writing this section:
-- _Is the final model reasonable and aligning with solution expectations? Are the final parameters of the model appropriate?_
-- _Has the final model been tested with various inputs to evaluate whether the model generalizes well to unseen data?_
-- _Is the model robust enough for the problem? Do small perturbations (changes) in training data or the input space greatly affect the results?_
-- _Can results found from the model be trusted?_
+So far, we have used the area under the ROC curve as an auxiliary metric as this allowed us to compare models independent of the threshold chosen for classifying observations as positive. The performance metrics described in chapter `I. Definition - Metrics`, however, do require to choose a threshold. For the final evaluation, only the scikit-learn pipeline using count vectorization on the full vocabulary and a support vector machine (the parameters of which have both been optimized via grid search) will be considered. Compare `Appendix 4.A` for a full specification of the pipeline used. The final model was evaluated on five different random seeds. `Table XX` summarizes the best combination of precision and recall given the target ratio of approximately 1.25 (0.95 / 0.75).
 
 ### Justification
-In this section, your model’s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
-- _Are the final results found stronger than the benchmark result reported earlier?_
-- _Have you thoroughly analyzed and discussed the final solution?_
-- _Is the final solution significant enough to have solved the problem?_
-
+- Improvement over the benchmark, but not to the extent that the initial objectives were fully achieved
+- Target improvement over benchmark: XX%
+- Actual improvement over benchmark: XX%
 
 ## V. Conclusion
-_(approx. 1-2 pages)_
 
 ### Free-Form Visualization
-In this section, you will need to provide some form of visualization that emphasizes an important quality about the project. It is much more free-form, but should reasonably support a significant result or characteristic about the problem that you want to discuss. Questions to ask yourself when writing this section:
-- _Have you visualized a relevant or important quality about the problem, dataset, input data, or results?_
-- _Is the visualization thoroughly analyzed and discussed?_
-- _If a plot is provided, are the axes, title, and datum clearly defined?_
+- Texts are very long, and sample size is very small
+- Others have found that these properties tend to favor bag of word + shallow classifier vs. sequence tokenization + sequence aware classifier as well (link to google developer guide for text classification)
+- Add same KPIs for popular IMDB dataset as well (on which fastai's ULMFiT performed well)
+
+<center><img src="./images-and-tables/blog-post-length.png" alt="Blog Post Length Distribution" width="400"/></center>
+<center>*Figure 3: Distribution of word count per blog post*
+<br>
+<br>
+</center>
 
 ### Reflection
-In this section, you will summarize the entire end-to-end problem solution and discuss one or two particular aspects of the project you found interesting or difficult. You are expected to reflect on the project as a whole to show that you have a firm understanding of the entire process employed in your work. Questions to ask yourself when writing this section:
-- _Have you thoroughly summarized the entire process you used for this project?_
-- _Were there any interesting aspects of the project?_
-- _Were there any difficult aspects of the project?_
-- _Does the final model and solution fit your expectations for the problem, and should it be used in a general setting to solve these types of problems?_
+- Process:
+  - End-to-end project
+    - Gather, clean and label data
+    - Decide on which preprocessing methods to use with which modeling approaches
+    - Develop helper methods to streamline training and evaluation process
+- Interesting:
+  - A large variety of combinations of preprocessing and modeling steps
+  - Lots of new developments in this area in recent months
+- Difficult:
+  - Keeping track with all the new developments and deciding what to focus on
+  - Making different approaches using different libraries comparable
+- Practical use:
+  - Limited, given the amount of data that would most likely be required to find a good solution
+  - Better: Find the right people to follow on twitter, who will recommend more than enough great articles
+
 
 ### Improvement
-In this section, you will need to provide discussion as to how one aspect of the implementation you designed could be improved. As an example, consider ways your implementation can be made more general, and what would need to be modified. You do not need to make this improvement, but the potential solutions resulting from these changes are considered and compared/contrasted to your current solution. Questions to ask yourself when writing this section:
-- _Are there further improvements that could be made on the algorithms or techniques you used in this project?_
-- _Were there algorithms or techniques you researched that you did not know how to implement, but would consider using if you knew how?_
-- _If you used your final solution as the new benchmark, do you think an even better solution exists?_
+- Add unified interface for comparing the results from different libraries and enabling ensembling for all of them (store model architectures and results separately on disk and reload for evaluation instead of holding them in memory)
+- Add feature selection for bag of words tokenization
+- Thoroughly compare mlp as an alternative to random forests and svms, analyze impact and add to analysis of combinations of preprocessing and modeling techniques
+- Above all: Gather more data
+- Potentially: Augment training data in some way (e.g. split based on paragraphs and combine prediction for all paragraphs to get a score on blog post level)
 
 -----------
-
-*Sources:*
-
-- *Gardiner (2015): Gardiner, Bryan (2015) You'll be Outraged at How Easy it Was to
-Get You to Click On This Headline. Available at: https://www.wired.com/2015/12/psychology-of-clickbait/ (Last accessed: 2018-11-25).
 
 ### Appendix
 
@@ -775,41 +819,8 @@ Get You to Click On This Headline. Available at: https://www.wired.com/2015/12/p
 <br>
 </center>
 
+
 #### Appendix II
-
-##### Best Parameters for CountVectorizer, Support Vector Machine and Full Vocabulary
-
-```bash
-CountVectorizer(analyzer='word', binary=False, decode_error='strict',
-           dtype=<class 'numpy.int64'>, encoding='utf-8', input='content',
-           lowercase=True, max_df=0.957962317501337, max_features=6020,
-           min_df=0.06021641222487595, ngram_range=(1, 1), preprocessor=None,
-           stop_words=None, strip_accents=None,
-           token_pattern='(?u)\\b\\w\\w+\\b', tokenizer=None)
-
-SVC(C=2.2281934634464564, cache_size=200, class_weight='balanced', coef0=0.0,
-                decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',
-                max_iter=-1, probability=True, shrinking=True,
-                tol=0.001, verbose=False)
-```
-
-##### Best Parameters for CountVectorizer, Support Vector Machine and Specific Vocabulary
-
-```bash
-CountVectorizer(analyzer='word', binary=False, decode_error='strict',
-           dtype=<class 'numpy.int64'>, encoding='utf-8', input='content',
-           lowercase=True, max_df=0.9253642126352534, max_features=11106,
-           min_df=0.05762831674562723, ngram_range=(1, 2), preprocessor=None,
-           stop_words=None, strip_accents=None,
-           token_pattern='(?u)\\b\\w\\w+\\b', tokenizer=None)
-
-SVC(C=1.6612794146075704, cache_size=200, class_weight=None, coef0=0.0,
-                decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',
-                max_iter=-1, probability=True, shrinking=True, tol=0.001,
-                verbose=False)
-```
-
-#### Appendix III
 
 <center>
 <table border="2" class="dataframe">
@@ -854,3 +865,74 @@ SVC(C=1.6612794146075704, cache_size=200, class_weight=None, coef0=0.0,
 <br>
 <br>
 </center>
+
+
+#### Appendix III
+
+<center>
+<table border="2" class="dataframe">
+  <thead>
+    <tr style="text-align: center;">
+      <th><center>method</th>
+      <th><center>train auc</th>
+      <th><center>test auc</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr align="center">
+      <td>lm fine tuning v1</td>
+      <td>0.886123</td>
+      <td>0.757143</td>
+    </tr>
+    <tr align="center">
+      <td>lm fine tuning v2</td>
+      <td>0.880826</td>
+      <td>0.662857</td>
+    </tr>
+    <tr align="center">
+      <td>lm fine tuning v3</td>
+      <td>0.962394</td>
+      <td>0.560000</td>
+    </tr>
+  </tbody>
+</table>
+</center>
+<center>
+*Table XX: Detailed results from class 3 approach*
+<br>
+<br>
+</center>
+
+#### Appendix IV
+
+##### A. Best Parameters for CountVectorizer, Support Vector Machine and Full Vocabulary
+
+```bash
+CountVectorizer(analyzer='word', binary=False, decode_error='strict',
+           dtype=<class 'numpy.int64'>, encoding='utf-8', input='content',
+           lowercase=True, max_df=0.957962317501337, max_features=6020,
+           min_df=0.06021641222487595, ngram_range=(1, 1), preprocessor=None,
+           stop_words=None, strip_accents=None,
+           token_pattern='(?u)\\b\\w\\w+\\b', tokenizer=None)
+
+SVC(C=2.2281934634464564, cache_size=200, class_weight='balanced', coef0=0.0,
+                decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',
+                max_iter=-1, probability=True, shrinking=True,
+                tol=0.001, verbose=False)
+```
+
+##### B. Best Parameters for CountVectorizer, Support Vector Machine and Specific Vocabulary
+
+```bash
+CountVectorizer(analyzer='word', binary=False, decode_error='strict',
+           dtype=<class 'numpy.int64'>, encoding='utf-8', input='content',
+           lowercase=True, max_df=0.9253642126352534, max_features=11106,
+           min_df=0.05762831674562723, ngram_range=(1, 2), preprocessor=None,
+           stop_words=None, strip_accents=None,
+           token_pattern='(?u)\\b\\w\\w+\\b', tokenizer=None)
+
+SVC(C=1.6612794146075704, cache_size=200, class_weight=None, coef0=0.0,
+                decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',
+                max_iter=-1, probability=True, shrinking=True, tol=0.001,
+                verbose=False)
+```
