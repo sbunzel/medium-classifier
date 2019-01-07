@@ -43,6 +43,19 @@ def read_results(folder: Path, pattern: str) -> List:
     return results
 
 
+def get_best_scores(y_true: np.ndarray, y_preds: np.ndarray, method:str, pos: int=1, b: float=0.8) -> pd.DataFrame:
+    auc = metrics.roc_auc_score(y_true, y_preds)
+    prs, rcs, ths = metrics.precision_recall_curve(y_true, y_preds, pos_label=pos)
+    f_def = (prs > 0) & (rcs > 0)
+    prs, rcs, ths = prs[f_def], rcs[f_def], ths[f_def[:-1]]
+    f_betas = [metrics.fbeta_score(y_true, y_preds > t, beta=b) for t in ths]
+    return (pd.DataFrame({"method": method, "roc_auc": auc, "threshold": ths, "precision": prs, "recall": rcs, f"f_{b}": f_betas})
+                    .sort_values(by=f"f_{b}", ascending=False)
+                    .head(1)
+                    .reset_index()
+                    .drop("index", axis=1))
+
+
 def explode_texts(df: pd.DataFrame, fixed_cols: tuple=("id", "label"), split: str="\n") -> pd.DataFrame:
     return (df
              .reset_index()

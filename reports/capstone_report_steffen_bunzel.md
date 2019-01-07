@@ -230,8 +230,6 @@ Thus, three classes of classification models were trained and tuned on the numer
 <br>
 </center>
 
-#TODO: REPORT BEST BASELINE PRECISION AND RECALL
-
 ## III. Methodology
 
 ### Data Preprocessing
@@ -412,10 +410,15 @@ Compare chapter `IV. Results - Model Evaluation and Validation` for the results 
 </table>
 </center>
 <center>
-*Table 5: TBD*
+*Table 5: Results from class 2 approach averaged over different random seeds*
 <br>
 <br>
 </center>
+
+TODO: SHORT DESCRIPTION OF OPTIMIZATION PROCESS
+- Tuned dropout and other l2 regularization
+- Experimented with architecture and preprocessing of embeddings
+- No significant improvements were made
 
 #### Class 3: Pretrained Language Model + Neural Network
 
@@ -447,10 +450,15 @@ Compare chapter `IV. Results - Model Evaluation and Validation` for the results 
 </table>
 </center>
 <center>
-*Table 6: TBD*
+*Table 6: Results from class 3 approach averaged over different random seeds*
 <br>
 <br>
 </center>
+
+TODO: SHORT DESCRIPTION OF OPTIMIZATION PROCESS
+- Tuned dropout and other regularization
+- Experimented with more language model finetuning
+- Faced challenges with evaluating the model consistently
 
 ## IV. Results
 
@@ -509,12 +517,77 @@ Table 7 summarizes the resulting performance metrics for the modeling approaches
 
 For the parameter settings found by the grid searches please refer to `Appendix IV`.
 
-So far, we have used the area under the ROC curve as an auxiliary metric as this allowed us to compare models independent of the threshold chosen for classifying observations as positive. The performance metrics described in chapter `I. Definition - Metrics`, however, do require to choose a threshold. For the final evaluation, only the scikit-learn pipeline using count vectorization on the full vocabulary and a support vector machine (the parameters of which have both been optimized via grid search) will be considered. Compare `Appendix 4.A` for a full specification of the pipeline used. The final model was evaluated on five different random seeds. `Table XX` summarizes the best combination of precision and recall given the target ratio of approximately 1.25 (0.95 / 0.75).
+So far, we have used the area under the ROC curve as an auxiliary metric as this allowed us to compare models independent of the threshold chosen for classifying observations as positive. The performance metrics described in chapter `I. Definition - Metrics`, however, do require to choose a threshold. For the final evaluation, only the scikit-learn pipeline using count vectorization on the full vocabulary and a support vector machine (the parameters of which have both been optimized via grid search) will be considered. Compare `Appendix 4.A` for a full specification of the pipeline used. The final model was evaluated on five different random seeds. `Table 8` summarizes the best combination of precision and recall given the target ratio of approximately 1.25 (0.95 / 0.75). For comparison, the baseline model was evaluated using the same random seeds (and ensuing train-test splits). Please refer to `Appendix V` for a detailed overview of the results. The summary table shows that the best text-based model performs significantly better than the simple benchmark model across all metrics except when looking at recall in isolation. The thresholds used to calculate precision and recall were determined based on the f_beta score, using a beta of 0.8 (= 1 / 1.25) to reflect the relative weighting of precision and recall determined by the objective of this work.
+
+<center>
+<table border="2" class="dataframe">
+  <thead>
+    <tr style="text-align: center;">
+      <th><center></th>
+      <th><center></th>
+      <th><center>baseline_model_lr</th>
+      <th><center>final_model_svc_countvec_full</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr align="center">
+      <th rowspan="2" valign="top">roc auc</th>
+      <th><center>mean</th>
+      <td>0.711429</td>
+      <td>0.802286</td>
+    </tr>
+    <tr align="center">
+      <th><center>std</th>
+      <td>0.063728</td>
+      <td>0.054601</td>
+    </tr>
+    <tr align="center">
+      <th rowspan="2" valign="top">precision</th>
+      <th><center>mean</th>
+      <td>0.533736</td>
+      <td>0.670779</td>
+    </tr>
+    <tr align="center">
+      <th><center>std</th>
+      <td>0.082874</td>
+      <td>0.083081</td>
+    </tr>
+    <tr align="center">
+      <th rowspan="2" valign="top">recall</th>
+      <th><center>mean</th>
+      <td>0.785714</td>
+      <td>0.742857</td>
+    </tr>
+    <tr align="center">
+      <th><center>std</th>
+      <td>0.133631</td>
+      <td>0.148117</td>
+    </tr>
+    <tr align="center">
+      <th rowspan="2" valign="top">f_0.8</th>
+      <th><center>mean</th>
+      <td>0.620629</td>
+      <td>0.713890</td>
+    </tr>
+    <tr align="center">
+      <th><center>std</th>
+      <td>0.037521</td>
+      <td>0.029165</td>
+    </tr>
+  </tbody>
+</table>
+</center>
+<center>
+*Table 8: Comparison of best text based model vs. benchmark model on numerical features*
+<br>
+<br>
+</center>
 
 ### Justification
-- Improvement over the benchmark, but not to the extent that the initial objectives were fully achieved
-- Target improvement over benchmark: XX%
-- Actual improvement over benchmark: XX%
+
+As the results presented in chapter `IV. Results - Model Evaluation and Validation` show, the best text-based model has a significantly higher general classification performance than the baseline model. The test set ROC AUC averaged over five different random seeds is approximately 12.77% higher. The average precision, which is the prioritized metric in this work, even increased by 25.68%. On the other hand, the average recall is 5.77% higher for the baseline model.
+
+In absolute terms the initial objectives of this work were not achieved. The final results of an `average precision of 0.67` and an `average recall of 0.74` are in aggregate still not close to the objective of `precision >= 0.95` and `recall >= 0.75`.
 
 ## V. Conclusion
 
@@ -529,6 +602,15 @@ So far, we have used the area under the ROC curve as an auxiliary metric as this
 <br>
 </center>
 
+<center><img src="./images-and-tables/imdb-review-length.png" alt="IMDB Review Length Distribution" width="400"/></center>
+<center>*Figure 4: Distribution of word count per imdb review*
+<br>
+<br>
+</center>
+
+
+
+
 ### Reflection
 - Process:
   - End-to-end project
@@ -541,6 +623,7 @@ So far, we have used the area under the ROC curve as an auxiliary metric as this
 - Difficult:
   - Keeping track with all the new developments and deciding what to focus on
   - Making different approaches using different libraries comparable
+  - Defining the right evaluation metric, f_0_8 would have been useful from the get go, but did not consider using it until the very end
 - Practical use:
   - Limited, given the amount of data that would most likely be required to find a good solution
   - Better: Find the right people to follow on twitter, who will recommend more than enough great articles
@@ -936,3 +1019,117 @@ SVC(C=1.6612794146075704, cache_size=200, class_weight=None, coef0=0.0,
                 max_iter=-1, probability=True, shrinking=True, tol=0.001,
                 verbose=False)
 ```
+
+#### Appendix V
+<center>
+<table border="2" class="dataframe">
+  <thead>
+    <tr style="text-align: center;">
+      <th><center></th>
+      <th><center>method</th>
+      <th><center>roc_auc</th>
+      <th><center>threshold</th>
+      <th><center>precision</th>
+      <th><center>recall</th>
+      <th><center>f_0.8</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr align="center">
+      <th><center>0</th>
+      <td>final_model_svc_countvec_full_v3</td>
+      <td>0.885714</td>
+      <td>0.579919</td>
+      <td>0.714286</td>
+      <td>0.714286</td>
+      <td>0.746812</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>final_model_svc_countvec_full_v5</td>
+      <td>0.811429</td>
+      <td>0.548128</td>
+      <td>0.750000</td>
+      <td>0.642857</td>
+      <td>0.739479</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>final_model_svc_countvec_full_v4</td>
+      <td>0.805714</td>
+      <td>0.403528</td>
+      <td>0.590909</td>
+      <td>0.928571</td>
+      <td>0.711615</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>final_model_svc_countvec_full_v2</td>
+      <td>0.765714</td>
+      <td>0.542546</td>
+      <td>0.727273</td>
+      <td>0.571429</td>
+      <td>0.691983</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>final_model_svc_countvec_full_v1</td>
+      <td>0.742857</td>
+      <td>0.646661</td>
+      <td>0.571429</td>
+      <td>0.857143</td>
+      <td>0.679558</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>baseline_model_lr_v3</td>
+      <td>0.808571</td>
+      <td>0.394291</td>
+      <td>0.642857</td>
+      <td>0.642857</td>
+      <td>0.672131</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>baseline_model_lr_v4</td>
+      <td>0.734286</td>
+      <td>0.379447</td>
+      <td>0.600000</td>
+      <td>0.642857</td>
+      <td>0.642857</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>baseline_model_lr_v1</td>
+      <td>0.640000</td>
+      <td>0.315321</td>
+      <td>0.500000</td>
+      <td>0.857143</td>
+      <td>0.615770</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>baseline_model_lr_v5</td>
+      <td>0.688571</td>
+      <td>0.277611</td>
+      <td>0.464286</td>
+      <td>0.928571</td>
+      <td>0.592881</td>
+    </tr>
+    <tr align="center">
+      <th><center>0</th>
+      <td>baseline_model_lr_v2</td>
+      <td>0.685714</td>
+      <td>0.285543</td>
+      <td>0.461538</td>
+      <td>0.857143</td>
+      <td>0.579505</td>
+    </tr>
+  </tbody>
+</table>
+</center>
+<center>
+*Table XX: Full evaluation results*
+<br>
+<br>
+</center>
