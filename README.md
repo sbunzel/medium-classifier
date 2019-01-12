@@ -7,7 +7,8 @@ Run `conda env create -f env.yml` from the root folder of this directory.
 
 Use `conda env create -f env-fastai.yml` if you want to install pytorch and fastai as well.
 
-Instructions on where to obtain the data as well as other required resources can be found in the report and notebooks.
+Instructions on where to obtain the raw data as well as other required resources can be found in the report and notebooks.
+The preprocessed data used for training and evaluating the classification models is made available in this repository at `data/shared/train_data.parquet`.
 
 ### Project Overview
 This project evaluates the use of machine learning to tackle the omnipresent problem of [information overload](https://en.wikipedia.org/wiki/Information_overload).
