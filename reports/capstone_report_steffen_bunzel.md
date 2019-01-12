@@ -1,7 +1,7 @@
 # Machine Learning Engineer Nanodegree
 ## Capstone Project
 Steffen Bunzel
-January 6th, 2019
+January 12th, 2019
 
 ## I. Definition
 
@@ -183,9 +183,11 @@ These two characteristics underline the need to evaluate alternatives to using m
 ### Algorithms and Techniques
 As the focus of this work is on using just a post's text as an input for a classification task, the potential algorithmic approaches vary greatly depending on the approach used for pre-processing the data. The approaches evaluated in this project can be differentiated in three categories:
 
-1. Transforming the text into a numerical matrix based on word counts (absolute counts or relative to the frequency across all documents) allows training an arbitrary machine learning model. In particular three standard model classes were evaluated: A random forest classifier, a gradient boosting classifier and a support vector machine classifier.
+1. Transforming the text into a numerical matrix based on word counts (absolute counts or relative to the frequency across all documents) allows training an arbitrary machine learning model. In particular two standard model classes were evaluated: A random forest classifier and a support vector machine classifier.
 2. The second class of approaches aims to equip the model with a form of prior knowledge in the form of pretrained word embeddings, i.e. numerical vectors that represent each word and are derived from general purpose corpora in an unsupervised manner. While they could theoretically be used with a variety of modeling approaches, using word embeddings in combination with neural networks has recently become popular. In particular, this work evaluates approaches showcased in a [current Kaggle competition on text classification](https://www.kaggle.com/c/quora-insincere-questions-classification) and makes use of the [GloVe word embeddings](https://nlp.stanford.edu/projects/glove/) from Stanford NLP.
 3. Going one step further, a third class of approaches, popularized through works like fast.ai's [ULMFiT](https://arxiv.org/abs/1801.06146) or Google's [BERT](https://arxiv.org/abs/1810.04805) in 2018, encodes prior knowledge not "merely" through word embeddings, but pre-trained language models. These models are trained to predict the next token in a sequence and are used to extract higher-level features from raw text, which then serve as an input to upstream tasks such as classification.
+
+The main difference between class 1 approaches and class 2/3 approaches is in how they treat the texts. The class 1 approaches treat a document as an unordered collection of words (also callen `bag-of-words`) and vectorize it based on counts. Class 2 and 3 approaches treat text as a `sequence` of words and conserve information about ordering in vectorizing the texts.
 
 ### Benchmark
 As the data set used in this project is specific to the interest of the author, naturally no publicly available benchmarks exist. However, there is one obvious point of comparison: The performance of a model trained just on the numerical features available.
@@ -236,26 +238,27 @@ Thus, three classes of classification models were trained and tuned on the numer
 
 The preprocessing steps required to transform the base data into a format that allows modeling as described above can be distinguished in two categories:
 
-1. General preprocessing: As indicated above, the raw data cotained a few duplicate entries as well as blog posts written in a language other than English. These were removed prior to doing any modeling as they would only act as a confusion, regardless of model class. To do so, the Python libraries `pandas` (for data processing in general and duplicate removal in particular) and `spacy` (for language detection) were used.
+1. General preprocessing: As indicated above, the raw data contained a few duplicate entries as well as blog posts written in a language other than English. These were removed prior to doing any modeling as they would only act as a confusion, regardless of model class. To do so, the Python libraries `pandas` (for data processing in general and duplicate removal in particular) and `spacy` (for language detection) were used.
 
 2. Task-specific preprocessing: When transforming text into a feature matrix that can serve as an input for a machine learning algorithm, one has to make several important choices, for instance:
   - How to convert raw text into tokens, which can be represented by a unique numerical identifier? For example, one might want to represent "we will" and "we'll" by the same two tokens.
   - Which vocabulary to use, i.e. should all unique words in the full corpus be represented as a separate token in the vocabulary?
+  - Whether to treat texts as a sequence of tokens or as a bag-of-words
 
-In this work, several open-source machine learning libraries were used: `scikit-learn`, `keras` and `fastai`. All of these come with their own methods for text preprocessing (which might again be outsources, for example `fastai` uses `spacy's` tokenization engine under the hood). Thus, depending on which modeling approach was used, this work relied on slightly different answers to the questions just posed.
+In this work, several open-source machine learning libraries were used: `scikit-learn`, `keras` and `fastai`. All of these come with their own methods for text preprocessing (which might again be outsourced, for example `fastai` uses `spacy's` tokenization engine under the hood). Thus, depending on which modeling approach was used, this work relied on slightly different answers to the questions just posed.
 
-By default, all of these will use the full collection of unique words or a predefined number of most frequent words in the given corpus of documents as their vocabulary. As an alternative, the top 1000 most frequent words in the corpus, which are not part of the top 10.000 most frequent English words in general (as determined by [n-gram frequency of the Google Trillion Word Corpus](https://github.com/first20hours/google-10000-english)), were used as a specific vocabulary.
+By default, all of these will use the full collection of unique words or a predefined number of most frequent words in the given corpus of documents as their vocabulary. As an alternative, only the words, which are not part of the top 10.000 most frequent English words in general (as determined by [n-gram frequency of the Google Trillion Word Corpus](https://github.com/first20hours/google-10000-english)), were used as a specific vocabulary.
 
 ### Implementation
 
 Following the differentiation outlined in chapter `II. Algorithms and Techniques`, the implementation was structured based on the three classes of models evaluated in this work:
 1. Count-based vectorization + random forest or support vector machine using `scikit-learn's` implementations for transforming text into numerical features as well as the machine learning models.
-2. Word embeddings + neural network using the `keras` implementations for tokenizing text and combining embedding layers, dense layers, rectified linear activations and dropout layers into a deep neural network.
-3. Pretrained language model + neural network using `fastai's` implementation for tokenizing text (internally using `spacy's` Tokenizer), a pretrained recurrent neural network based language model (on Wikipedia) provided by the `fastai` library as well as its implementation for combining the features extracted from raw text by the language model with fully connected classification layers.
+2. Sequence tokenization, word embeddings + neural network using the `keras` implementations for tokenizing text and combining embedding layers, dense layers, rectified linear activations and dropout layers into a deep neural network.
+3.  Sequence tokenization, pretrained language model + neural network using `fastai's` implementation for tokenizing text (internally using `spacy's` Tokenizer), a pretrained recurrent neural network based language model (pretrained on Wikipedia) provided by the `fastai` library as well as its implementation for combining the features extracted from raw text by the language model with classification layers.
 
-The biggest challenge with these diverse approaches was to evaluate them consistently, especially given the small amount of data available for training and evaluation. The three ML libraries used for this work all have slightly different interfaces. In addition, the evaluation metrics used here are dependent on the treshhold chosen for classifying a post as positive versus negative. While `scikit-learn` offers a variety of purpose-specific metrics to tackle this, the deep learning libraries `keras` and `fastai` ask their users to implement metrics other than a few standards themselves. To facilitate consistency, the author implemented a common interface for `scikit-learn` and `keras` models that allows the latter to be evaluated using convenience methods provided by the former. In this context, a custom n strategy was implemented to enable cross validation of models from both libraries through a common interface. `fastai` was not plugged into this interface due to time constraints and their workflow being substantially different from the `scikit-learn` standard.
+The biggest challenge with these diverse approaches was to evaluate them consistently, especially given the small amount of data available for training and evaluation. The three ML libraries used for this work all have slightly different interfaces. In addition, the evaluation metrics used here are dependent on the treshhold chosen for classifying a post as positive versus negative. While `scikit-learn` offers a variety of purpose-specific metrics to tackle this, the deep learning libraries `keras` and `fastai` ask their users to implement metrics other than a few standards themselves. To facilitate consistency, the author implemented a common interface for `scikit-learn` and `keras` models that allows the latter to be evaluated using convenience methods provided by the former. In this context, a custom strategy was implemented to enable cross validation of models from both libraries through a common interface. `fastai` was not plugged into this interface due to time constraints and their workflow being substantially different from the `scikit-learn` standard.
 
-In addition, due to the data being very small, exploratory analysis showed that the performance obtained from the different methods (especially when comparing the various combinations of vectorization strategy + classifier) differed quite substantially based on how the data was initially split into train and test set. To get an even more robust estimate of out of sample performance and to minimize the influence of randomness, all results where averaged across five different random seeds.
+In addition, due to the data being very small, exploratory analysis showed that the performance obtained from the different methods (especially when comparing the various combinations of vectorization strategy + classifier) differed quite substantially based on how the data was initially split into train and test set. To get an even more robust estimate of out-of-sample performance and to minimize the influence of randomness, all results where averaged across five different random seeds.
 
 ### Refinement
 
@@ -372,7 +375,7 @@ The following parameters were optimized:
   - `ngram_range`: Minimum and maximum number of tokens to consider as belonging together
   - `max_df`: Which percentage of most frequent terms to ignore
   - `min_df`: Which percentage of least frequent terms to ignore
-  - `max_features`: Maximum number of tokens to considered ordered by term frequency across the corpus
+  - `max_features`: Maximum number of tokens to be considered ordered by term frequency across the corpus
 - Support Vector Machine Classifier
   - `C`: Penalty on the error term, a higher value places more emphasis on classifying all observations correctly and is thus more likely to lead to overfitting
   - `gamma`: Kernel coefficient for the `rbf` kernel. Determines how much influence a single observation has. Higher values are more likely to lead to overfitting
@@ -381,6 +384,10 @@ The following parameters were optimized:
 Compare chapter `IV. Results - Model Evaluation and Validation` for the results of this optimization.
 
 #### Class 2: Word Embeddings + Neural Network
+
+The second class of models tokenizes the blog posts as sequences instead of bag-of-words (i.e., they preserve the order in which words appear and do not "just" look at the number of occurences in a document), makes use of pretrained word embeddings (i.e. numerical vectors representing a word) and combines these in a neural network architecture with recurrent layers and a classification layer. Inspiration for these models was taken from a current Kaggle competition aimed at [identifying insincere questions](https://www.kaggle.com/c/quora-insincere-questions-classification) on quora.com. For the evaluation of these models, a simple architecture of one embedding layer, one bidirectional layer of gated recurrent units, a max pooling layer and one dense layer leading to a final dense layer with sigmoid activation for binary classification was used. `Adam` was used as the optimizer and `binary crossentropy` as the loss function. Different strategies were tried for applying `dropout` and `weight decay` for regularization. Furthermore small changes to the architecture (e.g. changing the number of units per layer) and different preprocessing strategies were experimented with. The latter was done primarily based on [this Kaggle kernel](https://www.kaggle.com/christofhenkel/how-to-preprocessing-when-using-embeddings/notebook) and was aimed at getting the vocabulary used in sync with the vocabulary for which word embeddings are available.
+
+Unfortunately, all of these measures did not lead to any substantial improvements to the performance metrics shown in `table 5`. `Chapter V` discusses a potential reason why this class of approaches does not seem to be well suited for the problem at hand.
 
 <center>
 <table border="2" class="dataframe">
@@ -415,12 +422,11 @@ Compare chapter `IV. Results - Model Evaluation and Validation` for the results 
 <br>
 </center>
 
-TODO: SHORT DESCRIPTION OF OPTIMIZATION PROCESS
-- Tuned dropout and other l2 regularization
-- Experimented with architecture and preprocessing of embeddings
-- No significant improvements were made
-
 #### Class 3: Pretrained Language Model + Neural Network
+
+The experience with the last class of approaches, i.e. using a language model to extract features from the raw text which are then fed into a two layer neural network for classification, was similar to that described above for class 2: Independent from the method tried to improve the results (mainly longer finetuning of the langugage model, adding regularization), improvements did not really show.
+
+`Table 6` summarizes the results.
 
 <center>
 <table border="2" class="dataframe">
@@ -454,11 +460,6 @@ TODO: SHORT DESCRIPTION OF OPTIMIZATION PROCESS
 <br>
 <br>
 </center>
-
-TODO: SHORT DESCRIPTION OF OPTIMIZATION PROCESS
-- Tuned dropout and other regularization
-- Experimented with more language model finetuning
-- Faced challenges with evaluating the model consistently
 
 ## IV. Results
 
@@ -517,7 +518,7 @@ Table 7 summarizes the resulting performance metrics for the modeling approaches
 
 For the parameter settings found by the grid searches please refer to `Appendix IV`.
 
-So far, we have used the area under the ROC curve as an auxiliary metric as this allowed us to compare models independent of the threshold chosen for classifying observations as positive. The performance metrics described in chapter `I. Definition - Metrics`, however, do require to choose a threshold. For the final evaluation, only the scikit-learn pipeline using count vectorization on the full vocabulary and a support vector machine (the parameters of which have both been optimized via grid search) will be considered. Compare `Appendix 4.A` for a full specification of the pipeline used. The final model was evaluated on five different random seeds. `Table 8` summarizes the best combination of precision and recall given the target ratio of approximately 1.25 (0.95 / 0.75). For comparison, the baseline model was evaluated using the same random seeds (and ensuing train-test splits). Please refer to `Appendix V` for a detailed overview of the results. The summary table shows that the best text-based model performs significantly better than the simple benchmark model across all metrics except when looking at recall in isolation. The thresholds used to calculate precision and recall were determined based on the f_beta score, using a beta of 0.8 (= 1 / 1.25) to reflect the relative weighting of precision and recall determined by the objective of this work.
+So far, we have used the area under the ROC curve as an auxiliary metric as this allowed us to compare models independent of the threshold chosen for classifying observations as positive. The performance metrics described in chapter `I. Definition - Metrics`, however, do require to choose a threshold. For the final evaluation, only the scikit-learn pipeline using count vectorization on the full vocabulary and a support vector machine (the parameters of which have both been optimized via grid search) was considered. Compare `Appendix 4.A` for a full specification of the pipeline used. The final model was evaluated on five different random seeds. `Table 8` summarizes the best combination of precision and recall given the target ratio of approximately 1.25 (0.95 / 0.75). For comparison, the baseline model was evaluated using the same random seeds (and ensuing train-test splits). Please refer to `Appendix V` for a detailed overview of the results. The summary table shows that the best text-based model performs significantly better than the simple benchmark model across all metrics except when looking at recall in isolation. The thresholds used to calculate precision and recall were determined based on the f_beta score, using a beta of 0.8 (= 1 / 1.25) to reflect the relative weighting of precision and recall determined by the objective of this work.
 
 <center>
 <table border="2" class="dataframe">
@@ -585,17 +586,13 @@ So far, we have used the area under the ROC curve as an auxiliary metric as this
 
 ### Justification
 
-As the results presented in chapter `IV. Results - Model Evaluation and Validation` show, the best text-based model has a significantly higher general classification performance than the baseline model. The test set ROC AUC averaged over five different random seeds is approximately 12.77% higher. The average precision, which is the prioritized metric in this work, even increased by 25.68%. On the other hand, the average recall is 5.77% higher for the baseline model.
+As the results presented in chapter `IV. Results - Model Evaluation and Validation` show, the best text-based model has a significantly higher general classification performance than the baseline model. The test set ROC AUC averaged over five different random seeds is approximately 12.77% higher. The average precision, which is the prioritized metric in this work, increased by 25.68%. On the other hand, the average recall is 5.77% higher for the baseline model.
 
 In absolute terms the initial objectives of this work were not achieved. The final results of an `average precision of 0.67` and an `average recall of 0.74` are in aggregate still not close to the objective of `precision >= 0.95` and `recall >= 0.75`.
 
 ## V. Conclusion
 
 ### Free-Form Visualization
-- Texts are very long, and sample size is very small
-- Others have found that these properties tend to favor bag of word + shallow classifier vs. sequence tokenization + sequence aware classifier as well (link to google developer guide for text classification)
-- Add same KPIs for popular IMDB dataset as well (on which fastai's ULMFiT performed well)
-
 <center><img src="./images-and-tables/blog-post-length.png" alt="Blog Post Length Distribution" width="400"/></center>
 <center>*Figure 3: Distribution of word count per blog post*
 <br>
@@ -608,33 +605,31 @@ In absolute terms the initial objectives of this work were not achieved. The fin
 <br>
 </center>
 
-
-
+`Figures 3 and 4` illustrate a characteristic about the dataset that was underappreciated at the outset of this project, but could serve as an explanation as to why the approaches treating the texts as bag-of-words and using a "shallow" classifier work better on the given problem than those treating the texts as sequences and making use of deep learning. `Figure 3` shows a histogram of word counts per blog post. The median length is `1683` words. For comparison, the same histogram is shown for the popular imdb sentiment classification dataset (more precisely, the version of this dataset that comes with keras). Here, the median length is `176` words. When we consider that the number of samples is `130` for the blog posts and `50.000` for imdb, we see that the `number of samples / number of words per sample` is considerably lower for the blog posts than for the imdb data (`0.08 vs. 284.09`). In other words, the problem at hand is one of a comparatively `very low number of samples of very long texts`. Others have found that these properties tend to favor bag-of-words + shallow classifier vs. sequence tokenization + sequence aware classifiers as well ([Google Developers Guide for Text Classification](https://developers.google.com/machine-learning/guides/text-classification/)). Google's developer guide mentions a ratio of `1500` as a heuristic for which approach is likely to work better (if it's smaller than 1500, use bag-of-words, if it's larger than 1500 use sequence tokenization). While it seems like this boundary is rather high (very competitive results have been achieved on the imdb dataset using class 2 and 3 approaches), the results of this work certainly confirm the general direction.
 
 ### Reflection
-- Process:
-  - End-to-end project
-    - Gather, clean and label data
-    - Decide on which preprocessing methods to use with which modeling approaches
-    - Develop helper methods to streamline training and evaluation process
-- Interesting:
-  - A large variety of combinations of preprocessing and modeling steps
-  - Lots of new developments in this area in recent months
-- Difficult:
-  - Keeping track with all the new developments and deciding what to focus on
-  - Making different approaches using different libraries comparable
-  - Defining the right evaluation metric, f_0_8 would have been useful from the get go, but did not consider using it until the very end
-- Practical use:
-  - Limited, given the amount of data that would most likely be required to find a good solution
-  - Better: Find the right people to follow on twitter, who will recommend more than enough great articles
 
+This work describes an end-to-end machine learning project: It started with gathering data as well as cleaning and hand-labeling it. After the user requirements were translated into metrics that can measure the performance of an analytical model, relevant combinations of preprocessing and modeling techniques were identified. To enable their consistent evaluation, helper functionality was developed. For each candidate approach, a model using default parameters was trained and evaluated. Only the most promising ones were finetuned to find the final model. This model was finally evaluated based on the performance metrics defined at the start of the project and compared to a simple baseline.
+
+What was interesting about this project was the large variety of potential combinations of preprocessing and modeling steps that can be used when working with text. In addition, the field of natural language processing has seen many new and promising approaches from the deep learning community over the last year. It was very interesting to explore these and try to get a better understanding of how they differ and relate to each other.
+
+However, keeping track of all of these developments and at the same time keeping a clear focus on a few promising approaches was challenging. What's more, given that many techniques are still very new, implementations are scattered across different libraries and do not necessary follow a consistent framework. Making these comparable was a key challenge of this project, which was not fully met. Another challenge was to define the right evaluation metric. To assess the performance of models across classification thresholds, ROC area under the curve was used. However, the initial objective metrics were stated in terms precision and recall, metrics which require to choose a threshold. For the final evaluation, the threshold was optimized for based on a custom `f_beta` score with `beta = 0.8` based on the target ratio between precision and recall. Consistently using this metric from the start would have reduced complexity.
+
+The practical use of the final model is limited, even though it represents a substantial improvement over the baseline. It seems like the costs for collecting the amount of labeled data that would be needed to achieve the objectives for precision and recall would outweigh the benefits of the classifier. Follows the right people on twitter and using their recommendations as an indication on which articles might be interesting seems like a more efficient approach for now.
 
 ### Improvement
-- Add unified interface for comparing the results from different libraries and enabling ensembling for all of them (store model architectures and results separately on disk and reload for evaluation instead of holding them in memory)
-- Add feature selection for bag of words tokenization
-- Thoroughly compare mlp as an alternative to random forests and svms, analyze impact and add to analysis of combinations of preprocessing and modeling techniques
-- Above all: Gather more data
-- Potentially: Augment training data in some way (e.g. split based on paragraphs and combine prediction for all paragraphs to get a score on blog post level)
+
+Above all, more labeled data would most likely be needed to improve the results of this projects. In addition to that, one could try to "augment" or "transform" the existing data in some way to make it easier for the models to learn. One such approach was tried in this project: Split each article on the newline characters, treat every paragraph as a separate training example and then average the predictions on the article level. However, this was only briefly tried on the class 3 approach and not thoroughly evaluated. For image classification problems, data augmentation is a large component of a successful modeling pipeline and helps greatly in improving generalization. However, for text data, it is less clear which kinds of transformations could work, if any.
+
+On top of that there are a few more fine-grained improvement opportunities:
+
+- Develop a unified interface for comparing the results from different libraries and enable ensembling for all of them (e.g. by storing model architectures and results separately on disk and reloading them for evaluation instead of holding them in memory as was done in the project). This would allow for more consistent evaluation of different techniques making use of different libraries.
+- Add feature selection for the bag of words tokenization approaches. The Google developer guidelines referenced above adds this step after vectorization of the texts and before modeling.
+- Add other models (such as naive bayes or multilayer perceptron) to the evaluation pipeline for bag-of-words approaches.
+- ...
+
+There are plenty of things one could try to improve the results. However, extensive experimentation has already been done and it seems like more data would be needed to make any substantial improvements.
+
 
 -----------
 
@@ -897,7 +892,7 @@ In absolute terms the initial objectives of this work were not achieved. The fin
 </table>
 </center>
 <center>
-*Table XX: Detailed results from class 1 approaches*
+*Table 9: Detailed results from class 1 approaches*
 <br>
 <br>
 </center>
@@ -944,7 +939,7 @@ In absolute terms the initial objectives of this work were not achieved. The fin
 </table>
 </center>
 <center>
-*Table XX: Detailed results from class 2 approach*
+*Table 10: Detailed results from class 2 approach*
 <br>
 <br>
 </center>
@@ -981,7 +976,7 @@ In absolute terms the initial objectives of this work were not achieved. The fin
 </table>
 </center>
 <center>
-*Table XX: Detailed results from class 3 approach*
+*Table 11: Detailed results from class 3 approach*
 <br>
 <br>
 </center>
@@ -1129,7 +1124,7 @@ SVC(C=1.6612794146075704, cache_size=200, class_weight=None, coef0=0.0,
 </table>
 </center>
 <center>
-*Table XX: Full evaluation results*
+*Table 12: Full evaluation results*
 <br>
 <br>
 </center>
